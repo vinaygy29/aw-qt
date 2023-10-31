@@ -271,6 +271,7 @@ def run(manager: Manager, testing: bool = False) -> Any:
     def periodic_check():
         check_user_switch(manager)
 
+
     user_switch_timer = QtCore.QTimer()
     user_switch_timer.timeout.connect(periodic_check)
     user_switch_timer.start(10000)
