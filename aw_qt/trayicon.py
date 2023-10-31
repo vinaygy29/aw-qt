@@ -23,7 +23,22 @@ import aw_core
 from .manager import Manager, Module
 
 logger = logging.getLogger(__name__)
+import getpass
+import time
+import win32com.client
 
+
+def check_user_switch(manager: Manager) -> None:
+    wmi = win32com.client.GetObject('winmgmts:')
+    for session in wmi.InstancesOf('Win32_ComputerSystem'):
+        if session.UserName is not None:
+            logging_msg = f"Detected user: {session.UserName}, Current user: {getpass.getuser()}"
+            logger.info(logging_msg)
+            time.sleep(3)
+            username = session.UserName.split('\\')[-1]
+            if username != getpass.getuser():
+                logger.warning("Mismatch detected. Exiting...")
+                exit(manager)
 
 def get_env() -> Dict[str, str]:
     """
@@ -253,7 +268,12 @@ def run(manager: Manager, testing: bool = False) -> Any:
         icon.setIsMask(True)
     else:
         icon = QIcon("icons:logo.png")
+    def periodic_check():
+        check_user_switch(manager)
 
+    user_switch_timer = QtCore.QTimer()
+    user_switch_timer.timeout.connect(periodic_check)
+    user_switch_timer.start(10000)
     trayIcon = TrayIcon(manager, icon, widget, testing=testing)
     trayIcon.show()
 
